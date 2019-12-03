@@ -3,7 +3,6 @@ const axios = require('axios');
 const axiosWithAuth = require('./components/axiosWithAuth');
 const openTicket = require('./components/open-ticket');
 const resolveTicket = require('./components/resolve-ticket');
-const assignTicket = require('./components/assignTicket');
 
 const tokens = [];
 
@@ -200,30 +199,22 @@ app.view('student_login_id', async ({ack, body, payload, view, context}) => {
     }catch(err){}
 });
 
-app.view('helper_login_id', async ({ack, body, payload, view, context}) => {
-    ack();
-    const {trigger_id} = body;
-    const user_id = body.user.id;
-    let {username, password} = payload.state.values;
-    username = username.usernamechild.value;
-    password = password.passwordchild.value;
-
-    try{
-        const result = await axios.post('https://ddq.herokuapp.com/api/auth/login', {username, password});
-        const {token} = result && result.data;
-        const tokenStore = {};
-        tokenStore[user_id] = token;
-        tokens.push({...tokenStore});
-    }catch(err){}
-});
-
-
 app.command('/ticket', openTicket(app, tokens));
 app.command('/resolve', resolveTicket(app, tokens));
 
-app.command()
+app.command('/today', async () => {
+    await axiosWithAuth(user_id, tokens).get('/courses/today');
+});
 
-app.action('assign_ticket', assignTicket(app, tokens)); 
+app.command('/yesterday', async () => {
+    await axiosWithAuth(user_id, tokens).get('/courses/yesterday');
+});
+
+app.command('/tomorrow', async () => {
+    await axiosWithAuth(user_id, tokens).get('/courses/tomorrow');
+});
+
+app.action('resolve_ticket', resolveTicket(app, tokens)); 
 
 (async () => {
   const port = process.env.PORT || 4000
